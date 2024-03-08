@@ -1,4 +1,4 @@
-# SerenEnhance
+# SerenCDR
 
 This is our implementation for the SerenCDR model.
 
