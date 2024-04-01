@@ -8,7 +8,7 @@ This is our implementation for the SerenCDR model.
 
  ## Files
 
-- Unexpectedness_generation.py: Calculating unexpectedness score for each user-item pair.
+- Expectedness_generation.py: Calculating Expectedness score for each user-item pair.
 - SerenCDR.py: Our proposed model.
 
 ## Environment Settings
@@ -17,9 +17,9 @@ This is our implementation for the SerenCDR model.
  
 ## Quick Start
 
-1. Pre-calculate the items' unexpectedness scores for each user and generate the unexpectedness training set
+1. Pre-calculate the items' expectedness scores for each user and generate the training samples
     ```
-    python Unexpectedness_generation.py
+    python Expectedness_generation.py
     ```
     
 2. Train the SerernCDR model
