@@ -8,6 +8,7 @@ import random
 import math
 
 data_df = pd.read_csv("../data/SerenLens_Books.csv")  # load SerenLens data
+# data_df = pd.read_csv("../data/SerenLens_Movies.csv")  # load SerenLens data
 
 fp = open("../data/reviews_Books_5.json", "r") # load raw data for Amazon book review
 print ("ile name: ", fp.name)
@@ -129,11 +130,11 @@ for i in range(len(item_co_list)):
     item_df_co.to_csv(file_name)
 
 
-# generate positive samples and negative samples for each user (unexpectedness)
+# generate positive samples and negative samples for each user (expectedness)
 item_embedding = pd.read_csv('../data/item_encoding.csv') # load item embeddings
 for i in range(len(user_list)):
-    user_unexpect_pos = []  
-    user_unexpect_neg = []
+    user_expect_pos = []  
+    user_expect_neg = []
 
     user_item_seq_temp = data_df[data_df['user_id']==user_list[i]]['item_id'].tolist() # current item sequence for a user
     prob_list_temp = np.zeros((len(item_list))) # initalize the item appearance probability in a user sequence
@@ -166,8 +167,9 @@ for i in range(len(user_list)):
         e_exp = item_embedding.loc[ix_exp].values
         e_unp = item_embedding.loc[ix_unp].values
 
-        user_unexpect_pos.append(e_unp)
-        user_unexpect_neg.append(e_exp)
-    user_sample = user_unexpect_pos + user_unexpect_neg
-    file_name = '../data/user_unexpectedness_samples/' + user_list[i]
+        user_expect_pos.append(e_exp)
+        user_expect_neg.append(e_unp)
+    user_sample = user_expect_pos + user_unexpect_neg
+    file_name = '../data/SerenLens_book/user_expectedness_samples/' + user_list[i]
+    # file_name = '../data/SerenLens_movie/user_expectedness_samples/' + user_list[i]
     pd.DataFrame(user_sample).to_csv(file_name)
