@@ -22,7 +22,7 @@ This is our implementation for the SerenCDR model.
     python Unexpectedness_generation.py
     ```
     
-2. Train the SerernEnhance model
+2. Train the SerernCDR model
     ```
     python SerenCDR.py
     ```
