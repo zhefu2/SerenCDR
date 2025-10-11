@@ -4,7 +4,7 @@ This is our implementation for the SerenCDR model.
 
 **Dataset:**  
 1. _SerenCDRLens_ [[link]](https://github.com/zhefu2/SerenLens), a large ground truth dataset on cross-domain serendipity-oriented recommendation tasks.
-2. Amazon Review Data (Books). [[link]](https://cseweb.ucsd.edu/~jmcauley/datasets/amazon_v2/)
+2. Amazon Review Data. [[link]](https://cseweb.ucsd.edu/~jmcauley/datasets/amazon_v2/)
 
  ## Files
 
