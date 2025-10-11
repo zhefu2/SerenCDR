@@ -145,13 +145,13 @@ for i in range(len(user_list)):
         ps = pd.read_csv(item_file_path)['smooth_probability'].values # smoothed p(i|u)
         prob_list_temp = prob_list_temp + ps / len(user_item_seq_temp)  # calculate unexpectedness score
     
-      user_unexp_df = pd.DataFrame(item_list, columns=['item_id'])
-      user_unexp_df['user_unexpectedness_score'] = -1 * math.log(prob_list_temp)
-      user_unexp_df = item_df_co.sort_values(by="user_unexpectedness_score" , ascending=True)
+      user_exp_df = pd.DataFrame(item_list, columns=['item_id'])
+      user_exp_df['user_expectedness_score'] = math.log(prob_list_temp)
+      user_exp_df = item_df_co.sort_values(by="user_expectedness_score" , ascending=False)
 
-    idx = int(len(user_unexp_df)*0.3) # first or last 30% of the data
-    exp = iuser_unexp_df.iloc[:idx]['item_id'] # negative samples for unexpectedness
-    unexp = user_unexp_df.iloc[len(user_unexp_df)-idx:]['item_id'] # positive samples for unexpectedness
+    idx = int(len(user_unexp_df)*0.3) # first or last 30% of the data as positive samples for expectedness
+    exp = iuser_unexp_df.iloc[:idx]['item_id'] # # first 30% of the data asnegative samples for unexpectedness
+    unexp = user_unexp_df.iloc[len(user_unexp_df)-idx:]['item_id'] # last 30% of the data as negative samples for expectedness
 
     # generate 50 pairs of positive and negative items for each user
     for k in range(50):
