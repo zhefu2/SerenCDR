@@ -20,19 +20,19 @@ s_i_list = pd.read_csv('../Dataset/Book/item_embedding/item_list.csv').set_index
 s_i_emb = np.genfromtxt('../Dataset/Book/item_embedding/item_emb.csv', delimiter=',', dtype=np.float32)
 
 s_i = []
-s_i_unexp = []
+s_i_exp = []
 s_i_rel = []
 
 # Construct positive and negative sample pairs
 for i in range(len(s_u_list)):
   u_temp = s_u_list.iloc[i]['user_id']
 
-  u_unexp_df = pd.read_csv('../Dataset/Book/user_unexpectedness_samples_movie/' + u_temp + '.csv', index_col=0)[
+  u_exp_df = pd.read_csv('../Dataset/Book/user_expectedness_samples_movie/' + u_temp + '.csv', index_col=0)[
       'item_id'].values
   # convert id to item embeddings
-  for id in u_unexp_df:
+  for id in u_exp_df:
       i_ix = s_i_list.loc[id]['item_index']
-      s_i_unexp.append(s_i_emb[i_ix])
+      s_i_exp.append(s_i_emb[i_ix])
 
   u_rel_df = pd.read_csv('../Dataset/Book/user_relevance_samples_movie/' + u_temp + '.csv', index_col=0)[
       'item_id'].values
@@ -53,7 +53,7 @@ for i in range(len(s_u_list)):
 
 # Reshape data
 s_i = np.array(s_i).reshape([-1, 100, 128])
-s_i_unexp = np.array(s_i_unexp).reshape([-1, 100, 128])
+s_i_exp = np.array(s_i_exp).reshape([-1, 100, 128])
 s_i_rel = np.array(s_i_rel).reshape([-1, 100, 128])
 
 # Load data from target domain
@@ -66,18 +66,18 @@ t_i_list = pd.read_csv('../Dataset/Movie/item_embedding/item_list.csv').set_inde
 t_i_emb = np.genfromtxt('../Dataset/Movie/item_embedding/item_emb.csv', delimiter=',', dtype=np.float32)
 
 t_i = []
-t_i_unexp = []
+t_i_exp = []
 t_i_rel = []
 
 # Construct positive and negative sample pairs
 
 for i in range(len(t_u_list)):
   u_temp = t_u_list.iloc[i]['user_id']
-  u_unexp_df = pd.read_csv('../Dataset/Movie/user_unexpectedness_samples_movie/' + u_temp + '.csv', index_col=0)['item_id'].values
+  u_exp_df = pd.read_csv('../Dataset/Movie/user_expectedness_samples_movie/' + u_temp + '.csv', index_col=0)['item_id'].values
   # convert id to item embeddings
-  for id in u_unexp_df:
+  for id in u_exp_df:
     i_ix = t_i_list.loc[id]['item_index']
-    t_i_unexp.append(t_i_emb[i_ix])
+    t_i_exp.append(t_i_emb[i_ix])
 
   u_rel_df = pd.read_csv('../Dataset/Movie/user_relevance_samples_movie/' + u_temp + '.csv', index_col=0)['item_id'].values
   # convert id to item embeddings
@@ -98,7 +98,7 @@ for i in range(len(t_u_list)):
 
 
 t_i = np.array(t_i).reshape([-1, 100, 128])
-t_i_unexp = np.array(t_i_unexp).reshape([-1, 100, 128])
+t_i_exp = np.array(t_i_exp).reshape([-1, 100, 128])
 t_i_rel = np.array(t_i_rel).reshape([-1, 100, 128])
 
 # Hyperparameters of SerenCDR
@@ -192,7 +192,7 @@ class MyModel(Model):
     super(MyModel, self).__init__()
     # dim = 128  # serendipity features
 
-  def call(self, s_u, s_i, s_i_unexp, s_i_rel, t_u, t_i, t_i_unexp, t_i_rel,):
+  def call(self, s_u, s_i, s_i_exp, s_i_rel, t_u, t_i, t_i_exp, t_i_rel,):
     # domain-specific
     # source domain
     sd_sp_u, sd_sp_i = sd_specific()(s_u, s_i)
@@ -241,26 +241,26 @@ class MyModel(Model):
     pair_rt = rt_pos-rt_neg
 
     # auxiliary - source domain
-    rs_unexp = tf.matmul(sd_u, s_i_unexp, transpose_b=True)
-    rs_unexp = tf.reshape(rs_unexp, [-1, rs_unexp.shape[-1]])
-    rs_unexp = tf.keras.activations.sigmoid(rs_unexp)
+    rs_exp = tf.matmul(sd_u, s_i_exp, transpose_b=True)
+    rs_exp = tf.reshape(rs_exp, [-1, rs_exp.shape[-1]])
+    rs_exp = tf.keras.activations.sigmoid(rs_exp)
 
     rs_rel = tf.matmul(sd_u, s_i_rel, transpose_b=True)
     rs_rel = tf.reshape(rs_rel, [-1, rs_rel.shape[-1]])
     rs_rel = tf.keras.activations.sigmoid(rs_rel)
 
-    aux_s = tf.negative(tf.math.log(tf.math.divide(rs_rel, rs_unexp)))
+    aux_s = tf.negative(tf.math.log(tf.math.divide(rs_rel, rs_exp)))
 
     # auxiliary - target domain
-    rt_unexp = tf.matmul(td_u, t_i_unexp, transpose_b=True)
-    rt_unexp = tf.reshape(rt_unexp, [-1, rs_unexp.shape[-1]])
-    rt_unexp = tf.keras.activations.sigmoid(rt_unexp)
+    rt_exp = tf.matmul(td_u, t_i_exp, transpose_b=True)
+    rt_exp = tf.reshape(rt_exp, [-1, rs_exp.shape[-1]])
+    rt_exp = tf.keras.activations.sigmoid(rt_exp)
 
     rt_rel = tf.matmul(td_u, t_i_rel, transpose_b=True)
     rt_rel = tf.reshape(rt_rel, [-1, rt_rel.shape[-1]])
     rt_rel = tf.keras.activations.sigmoid(rt_rel)
 
-    aux_t = tf.negative(tf.math.log(tf.math.divide(rt_rel, rt_unexp)))
+    aux_t = tf.negative(tf.math.log(tf.math.divide(rt_rel, rt_exp)))
 
     return r_s, pair_rs, aux_s, r_t, pair_rt, aux_t
 
@@ -299,11 +299,11 @@ def ndcg(sre_labels, predictions, k):
     return ndcg
 
 # Training
-def train_step(s_u_train, s_i_train, s_i_unexp_train, s_i_rel_train, sd_train_labels, t_u_train, t_i_train, t_i_unexp_train, t_i_rel_train, td_train_labels):
+def train_step(s_u_train, s_i_train, s_i_exp_train, s_i_rel_train, sd_train_labels, t_u_train, t_i_train, t_i_exp_train, t_i_rel_train, td_train_labels):
   with tf.GradientTape() as tape:
     # training=True is only needed if there are layers with different
     # behavior during training versus inference (e.g. Dropout).
-    sd_predictions, sd_pair_pre, sd_aux, td_predictions, td_pair_pre, td_aux = model(s_u_train, s_i_train, s_i_unexp_train, s_i_rel_train, t_u_train, t_i_train, t_i_unexp_train, t_i_rel_train, training=True)
+    sd_predictions, sd_pair_pre, sd_aux, td_predictions, td_pair_pre, td_aux = model(s_u_train, s_i_train, s_i_exp_train, s_i_rel_train, t_u_train, t_i_train, t_i_exp_train, t_i_rel_train, training=True)
 
     loss_source = loss_object(sd_train_labels[:,:50], sd_pair_pre) # Loss of source domain
     loss_target = loss_object(td_train_labels[:,:50], td_pair_pre) # Loss of target domain
@@ -341,24 +341,24 @@ def test_step(s_u_test, s_i_test, sd_test_labels, t_u_test, t_i_test, td_test_la
   return hr_1, hr_5, hr_10, ndcg_5, ndcg_10, td_predictions.numpy()
 
 # Start
-def get_batch_data(u_l, tu_l, t_u, t_i, t_i_unexp, t_i_rel):
+def get_batch_data(u_l, tu_l, t_u, t_i, t_i_exp, t_i_rel):
   tu_l = tu_l.set_index('user_id')
   tu = []
   ti = []
-  ti_unexp = []
+  ti_exp = []
   ti_rel = []
   for i in range(len(u_l)):
     u_temp = u_l[i].replace('.csv','')
     u_ix = tu_l.loc[u_temp]
     tu.append(t_u[u_ix])
     ti.append(t_i[u_ix][0])
-    ti_unexp.append(t_i_unexp[u_ix][0])
+    ti_exp.append(t_i_exp[u_ix][0])
     ti_rel.append(t_i_rel[u_ix][0])
   tu = np.array(tu)
   ti = np.array(ti)
-  ti_unexp = np.array(ti_unexp)
+  ti_exp = np.array(ti_exp)
   ti_rel = np.array(ti_rel)
-  return tu, ti, ti_unexp, ti_rel
+  return tu, ti, ti_exp, ti_rel
 
 # Labels for source domain
 sd_train_labels = np.ones((s_i.shape[0],50))
@@ -382,12 +382,12 @@ for f in range(5):
   u_train = os.listdir(file_path + 'fold_' + str(f) + '/train/')
   u_test = os.listdir(file_path + 'fold_' + str(f) + '/test/')
 
-  t_u_train, t_i_train, t_i_unexp_train, t_i_rel_train = get_batch_data(u_train, t_u_list, t_u, t_i, t_i_unexp, t_i_rel)
+  t_u_train, t_i_train, t_i_exp_train, t_i_rel_train = get_batch_data(u_train, t_u_list, t_u, t_i, t_i_exp, t_i_rel)
 
-  train_td = tf.data.Dataset.from_tensor_slices((t_u_train, t_i_train, t_i_unexp_train, t_i_rel_train, td_train_labels)).batch(batch_size)
-  train_sd = tf.data.Dataset.from_tensor_slices((s_u, s_i, s_i_unexp, s_i_rel, sd_train_labels)).batch(5*batch_size)
+  train_td = tf.data.Dataset.from_tensor_slices((t_u_train, t_i_train, t_i_exp_train, t_i_rel_train, td_train_labels)).batch(batch_size)
+  train_sd = tf.data.Dataset.from_tensor_slices((s_u, s_i, s_i_exp, s_i_rel, sd_train_labels)).batch(5*batch_size)
 
-  t_u_test, t_i_test, t_i_unexp_test, t_i_rel_test = get_batch_data(u_test, t_u_list, t_u, t_i, t_i_unexp, t_i_rel)
+  t_u_test, t_i_test, t_i_exp_test, t_i_rel_test = get_batch_data(u_test, t_u_list, t_u, t_i, t_i_exp, t_i_rel)
 
 
   model = MyModel()
@@ -398,15 +398,15 @@ for f in range(5):
       train_loss.reset_states()
       pred = np.zeros((1,100))
 
-      for (s_u, s_i, s_i_unexp, s_i_rel, sd_train_labels), (t_u_train, t_i_train, t_i_unexp_train, t_i_rel_train, td_train_labels) in zip(train_sd, train_td):
-          train_step(s_u, s_i, s_i_unexp, s_i_rel, sd_train_labels, t_u_train, t_i_train, t_i_unexp_train, t_i_rel_train, td_train_labels)
+      for (s_u, s_i, s_i_exp, s_i_rel, sd_train_labels), (t_u_train, t_i_train, t_i_exp_train, t_i_rel_train, td_train_labels) in zip(train_sd, train_td):
+          train_step(s_u, s_i, s_i_exp, s_i_rel, sd_train_labels, t_u_train, t_i_train, t_i_exp_train, t_i_rel_train, td_train_labels)
 
       print(
         'Epoch %d --' % (epoch + 1),
         'Loss: %.6f,' % train_loss.result(),
       )
 
-  hr_1, hr_5, hr_10, ndcg_5, ndcg_10, pred = test_step(s_u, s_i, s_i_unexp, s_i_rel, sd_test_labels, t_u_test, t_i_test, t_i_unexp_test, t_i_rel_test, td_test_labels)
+  hr_1, hr_5, hr_10, ndcg_5, ndcg_10, pred = test_step(s_u, s_i, s_i_exp, s_i_rel, sd_test_labels, t_u_test, t_i_test, t_i_exp_test, t_i_rel_test, td_test_labels)
 
 
   r = np.array([[hr_1, hr_5, hr_10,  ndcg_5, ndcg_10]])
@@ -425,3 +425,4 @@ for f in range(5):
   col = ['HR@1', 'HR@5', 'HR@10', 'NDCG@5', 'NDCG@10']
   df = pd.DataFrame(data=result, columns=col)
   df.to_csv('../Results/SerenCDR/CrossSeren_fold_%d.csv' % (f+1))
+
