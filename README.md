@@ -24,7 +24,7 @@ This is our implementation for the SerenCDR model in TORS 2025 paper:
     python Expectedness_generation.py
     ```
     
-2. Train the SerernCDR model
+2. Train the SerernCDR model (The training data can be found [here](https://drive.google.com/drive/folders/1EDxFkNL2itTvaWLkL0TLjzehOip0AGgT?usp=sharing))
     ```
     python SerenCDR.py
     ```
